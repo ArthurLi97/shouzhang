@@ -1,0 +1,60 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "brand_primary",
+      "value": "#6B5CE7"
+    },
+    {
+      "name": "brand_primary_light",
+      "value": "#F0EDFF"
+    },
+    {
+      "name": "bg_base",
+      "value": "#F8F8F6"
+    },
+    {
+      "name": "card_bg",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ink_deep",
+      "value": "#1A1A1A"
+    },
+    {
+      "name": "ink_mid",
+      "value": "#666666"
+    },
+    {
+      "name": "ink_light",
+      "value": "#999999"
+    },
+    {
+      "name": "divider",
+      "value": "#E5E5E5"
+    },
+    {
+      "name": "search_bg",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "chip_bg",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "danger",
+      "value": "#FF3B30"
+    },
+    {
+      "name": "shadow_card",
+      "value": "#00000020"
+    },
+    {
+      "name": "shadow_float",
+      "value": "#00000030"
+    }
+  ]
+}

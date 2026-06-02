@@ -1,0 +1,32 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "SnapSticker - 把生活收集成贴纸"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "拍照生成贴纸，自由组合创作"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "SnapSticker"
+    },
+    {
+      "name": "app_name",
+      "value": "SnapSticker"
+    },
+    {
+      "name": "perm_camera",
+      "value": "用于拍摄照片生成贴纸"
+    },
+    {
+      "name": "perm_read_image",
+      "value": "用于从相册选择图片"
+    },
+    {
+      "name": "perm_write_image",
+      "value": "用于保存贴纸和作品到相册"
+    }
+  ]
+}
