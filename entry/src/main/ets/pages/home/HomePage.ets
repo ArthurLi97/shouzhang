@@ -1,6 +1,6 @@
 // pages/home/HomePage.ets
-// MEMO 首页 — Collection 为主角，Canvas 为配角
-// 弱化顶部 + 层叠Collection纸张 + Mini Canvas预览 + 底部Capture按钮
+// MEMO 首页 — Capture → Collect → Compose
+// 整体感设计：Header+Capture + My Collections + Latest Memo Preview
 
 import { Collection } from '../../models/Collection';
 import { CanvasSticker } from '../../models/CanvasSticker';
@@ -21,6 +21,30 @@ import {
 
 const OVERLAP_PX = 44;
 const SHEET_HEIGHT = 64;
+const MEMO_PREVIEW_HEIGHT = 240;
+const PREVIEW_STICKER_SIZE = 48;
+const PREVIEW_STICKER_BORDER = 6;
+
+interface PreviewStickerPos {
+  x: string;
+  y: string;
+  rotation: number;
+}
+
+interface PreviewStickerItem {
+  uri: string;
+  pos: PreviewStickerPos;
+}
+
+// 6 个固定位置 + 轻微旋转，模拟手账贴纸的随意感
+const PREVIEW_POSITIONS: PreviewStickerPos[] = [
+  { x: '12%', y: '12%', rotation: -8 },
+  { x: '52%', y: '8%', rotation: 5 },
+  { x: '30%', y: '42%', rotation: -3 },
+  { x: '68%', y: '38%', rotation: 10 },
+  { x: '10%', y: '68%', rotation: -6 },
+  { x: '58%', y: '65%', rotation: 4 },
+];
 
 @Component
 export struct HomePage {
@@ -28,19 +52,19 @@ export struct HomePage {
   @State collections: Collection[] = [];
   @State collectionCounts: Map<number, number> = new Map();
   @State totalStickers: number = 0;
-  @State canvasStickerCount: number = 0;
+  @State previewStickers: PreviewStickerItem[] = [];
   @State showPickerSheet: boolean = false;
 
   private db: RdbHelper = RdbHelper.getInstance();
 
   aboutToAppear(): void {
     this.loadData();
-    this.loadCanvasState();
+    this.loadPreviewStickers();
   }
 
   onPageShow(): void {
     this.loadData();
-    this.loadCanvasState();
+    this.loadPreviewStickers();
   }
 
   async loadData(): Promise<void> {
@@ -60,9 +84,34 @@ export struct HomePage {
     }
   }
 
-  loadCanvasState(): void {
-    const stickers = AppStorage.get<CanvasSticker[]>('home_canvas_stickers');
-    this.canvasStickerCount = stickers ? stickers.length : 0;
+  loadPreviewStickers(): void {
+    const canvasStickers = AppStorage.get<CanvasSticker[]>('home_canvas_stickers');
+    const mapStr = AppStorage.get<string>('home_canvas_image_map');
+    if (!canvasStickers || canvasStickers.length === 0 || !mapStr) {
+      this.previewStickers = [];
+      return;
+    }
+
+    let imageMap: Map<number, string>;
+    try {
+      const entries = JSON.parse(mapStr) as [number, string][];
+      imageMap = new Map<number, string>(entries);
+    } catch {
+      this.previewStickers = [];
+      return;
+    }
+
+    const preview: PreviewStickerItem[] = [];
+    const count = Math.min(canvasStickers.length, PREVIEW_POSITIONS.length);
+    for (let i = 0; i < count; i++) {
+      const cs = canvasStickers[i];
+      const uri = imageMap.get(cs.stickerId);
+      if (uri) {
+        const item: PreviewStickerItem = { uri, pos: PREVIEW_POSITIONS[i] };
+        preview.push(item);
+      }
+    }
+    this.previewStickers = preview;
   }
 
   getCurrentDate(): string {
@@ -86,183 +135,18 @@ export struct HomePage {
     this.pathStack.pushPathByName('CanvasEditPage', param);
   }
 
-  // ========== 顶部栏 ==========
+  // ========== Header + Capture ==========
   @Builder
-  TopBar(): void {
-    Column({ space: 2 }) {
+  HeaderWithCapture(): void {
+    Column({ space: 12 }) {
+      // 极弱顶部标题
       Text(this.getCurrentDate())
-        .fontSize(14)
-        .fontColor(TEXT_SECONDARY)
-
-      Text('My Collection')
-        .fontSize(20)
-        .fontWeight(FontWeight.Medium)
-        .fontColor(TEXT_PRIMARY)
-    }
-    .width('100%')
-    .height(64)
-    .padding({ left: 20, right: 20, top: 8 })
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  // ========== Collection 层叠区 ==========
-  @Builder
-  CollectionStack(): void {
-    Column({ space: 0 }) {
-      // 层叠容器
-      Stack({ alignContent: Alignment.TopStart }) {
-        ForEach(this.collections, (col: Collection, index: number) => {
-          // 单张 Collection 卡片
-          Stack({ alignContent: Alignment.TopStart }) {
-            CollectionFolderSheet({
-              name: col.name,
-              color: getFolderColor(index),
-              count: this.collectionCounts.get(col.id) ?? 0,
-              onTap: () => this.onCollectionTap(col, getFolderColor(index))
-            })
-          }
-          .width('100%')
-          .height(SHEET_HEIGHT)
-          .offset({ y: index * OVERLAP_PX })
-          .zIndex(this.collections.length - index)
-        }, (col: Collection) => col.id.toString())
-      }
-      .width('100%')
-      .height(this.getStackHeight())
-
-      // 空状态提示（全局无贴纸时）
-      if (this.totalStickers === 0) {
-        Text('Start collecting your first sticker')
-          .fontSize(14)
-          .fontColor(TEXT_TERTIARY)
-          .margin({ top: 16, bottom: 8 })
-      }
-    }
-    .width('100%')
-    .alignItems(HorizontalAlign.Center)
-  }
-
-  private getStackHeight(): number {
-    if (this.collections.length === 0) return 0;
-    return (this.collections.length - 1) * OVERLAP_PX + SHEET_HEIGHT;
-  }
-
-  // ========== Mini Canvas 预览 ==========
-  @Builder
-  MiniCanvasPreview(): void {
-    Column({ space: 8 }) {
-      Text('Memo Canvas')
         .fontSize(14)
         .fontColor(TEXT_SECONDARY)
         .width('100%')
         .textAlign(TextAlign.Start)
 
-      Stack({ alignContent: Alignment.Center }) {
-        // 厚纸板画布
-        Stack() {
-          // 厚度层
-          Stack()
-            .width('100%')
-            .height('100%')
-            .backgroundColor('#E7E1DA')
-            .borderRadius(4)
-            .offset({ x: 0, y: 2 })
-
-          // 环境 shadow
-          Stack()
-            .width('100%')
-            .height('100%')
-            .backgroundColor(PAPER)
-            .borderRadius(4)
-            .shadow({
-              radius: 20,
-              color: 'rgba(0,0,0,0.06)',
-              offsetX: 0,
-              offsetY: 6
-            })
-
-          // 核心 shadow
-          Stack()
-            .width('100%')
-            .height('100%')
-            .backgroundColor(PAPER)
-            .borderRadius(4)
-            .shadow({
-              radius: 4,
-              color: 'rgba(0,0,0,0.05)',
-              offsetX: 0,
-              offsetY: 2
-            })
-
-          // 主色层 + 纹理
-          Stack() {
-            Stack()
-              .width('100%')
-              .height('100%')
-              .backgroundColor(PAPER)
-              .borderRadius(4)
-
-            // 45° 纹理
-            Stack()
-              .width('100%')
-              .height('100%')
-              .borderRadius(4)
-              .linearGradient({
-                angle: 45,
-                colors: [
-                  ['rgba(0,0,0,0.006)', 0], ['rgba(0,0,0,0)', 0.1],
-                  ['rgba(0,0,0,0.006)', 0.2], ['rgba(0,0,0,0)', 0.3],
-                  ['rgba(0,0,0,0.006)', 0.4], ['rgba(0,0,0,0)', 0.5],
-                  ['rgba(0,0,0,0.006)', 0.6], ['rgba(0,0,0,0)', 0.7],
-                  ['rgba(0,0,0,0.006)', 0.8], ['rgba(0,0,0,0)', 0.9],
-                  ['rgba(0,0,0,0.006)', 1],
-                ]
-              })
-
-            // 高光边
-            Stack()
-              .width('100%')
-              .height('100%')
-              .borderRadius(4)
-              .border({
-                width: { top: 0.5, left: 0.5, right: 0, bottom: 0 },
-                color: 'rgba(255,255,255,0.35)',
-                style: BorderStyle.Solid
-              })
-
-            // 内容
-            if (this.canvasStickerCount > 0) {
-              Text(`${this.canvasStickerCount} sticker${this.canvasStickerCount === 1 ? '' : 's'}`)
-                .fontSize(14)
-                .fontColor(TEXT_SECONDARY)
-            } else {
-              Column({ space: 6 }) {
-                SymbolGlyph($r('sys.symbol.hand_draw'))
-                  .fontSize(24)
-                  .fontColor([TEXT_TERTIARY])
-
-                Text('Tap to create your memo')
-                  .fontSize(13)
-                  .fontColor(TEXT_TERTIARY)
-              }
-            }
-          }
-          .width('100%')
-          .height('100%')
-        }
-        .width('100%')
-        .aspectRatio(4 / 3)
-        .onClick(() => this.onCanvasTap())
-      }
-      .width('100%')
-    }
-    .width('100%')
-  }
-
-  // ========== Capture Button ==========
-  @Builder
-  CaptureButton(): void {
-    Column() {
+      // Capture 大印章按钮
       Stack({ alignContent: Alignment.Center }) {
         // 厚度层
         Stack()
@@ -333,11 +217,193 @@ export struct HomePage {
       .onClick(() => { this.showPickerSheet = true; })
     }
     .width('100%')
-    .height(88)
-    .position({ x: 0, y: undefined })
-    .justifyContent(FlexAlign.Center)
-    .backgroundColor('rgba(250,248,244,0.85)') // 轻微毛玻璃背景
-    .backdropBlur(8)
+    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  // ========== My Collections ==========
+  @Builder
+  CollectionStack(): void {
+    Column({ space: 0 }) {
+      Text('My Collections')
+        .fontSize(14)
+        .fontColor(TEXT_SECONDARY)
+        .width('100%')
+        .textAlign(TextAlign.Start)
+        .margin({ bottom: 12 })
+
+      // 层叠容器
+      Stack({ alignContent: Alignment.TopStart }) {
+        ForEach(this.collections, (col: Collection, index: number) => {
+          Stack({ alignContent: Alignment.TopStart }) {
+            CollectionFolderSheet({
+              name: col.name,
+              color: getFolderColor(index),
+              count: this.collectionCounts.get(col.id) ?? 0,
+              onTap: () => this.onCollectionTap(col, getFolderColor(index))
+            })
+          }
+          .width('100%')
+          .height(SHEET_HEIGHT)
+          .offset({ y: index * OVERLAP_PX })
+          .zIndex(this.collections.length - index)
+        }, (col: Collection) => col.id.toString())
+      }
+      .width('100%')
+      .height(this.getStackHeight())
+
+      if (this.totalStickers === 0) {
+        Text('No stickers yet — tap Capture to start')
+          .fontSize(14)
+          .fontColor(TEXT_TERTIARY)
+          .margin({ top: 16, bottom: 8 })
+      }
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  private getStackHeight(): number {
+    if (this.collections.length === 0) return 0;
+    return (this.collections.length - 1) * OVERLAP_PX + SHEET_HEIGHT;
+  }
+
+  // ========== Latest Memo Preview ==========
+  @Builder
+  LatestMemoPreview(): void {
+    Column({ space: 8 }) {
+      Text('Latest Memo')
+        .fontSize(14)
+        .fontColor(TEXT_SECONDARY)
+        .width('100%')
+        .textAlign(TextAlign.Start)
+
+      Stack({ alignContent: Alignment.Center }) {
+        // 厚纸板手账纸
+        Stack() {
+          // 厚度层
+          Stack()
+            .width('100%')
+            .height('100%')
+            .backgroundColor('#E7E1DA')
+            .borderRadius(4)
+            .offset({ x: 0, y: 2 })
+
+          // 环境 shadow
+          Stack()
+            .width('100%')
+            .height('100%')
+            .backgroundColor(PAPER)
+            .borderRadius(4)
+            .shadow({
+              radius: 16,
+              color: 'rgba(0,0,0,0.06)',
+              offsetX: 0,
+              offsetY: 5
+            })
+
+          // 核心 shadow
+          Stack()
+            .width('100%')
+            .height('100%')
+            .backgroundColor(PAPER)
+            .borderRadius(4)
+            .shadow({
+              radius: 4,
+              color: 'rgba(0,0,0,0.05)',
+              offsetX: 0,
+              offsetY: 2
+            })
+
+          // 主色层 + 纹理
+          Stack() {
+            Stack()
+              .width('100%')
+              .height('100%')
+              .backgroundColor(PAPER)
+              .borderRadius(4)
+
+            // 45° 纹理
+            Stack()
+              .width('100%')
+              .height('100%')
+              .borderRadius(4)
+              .linearGradient({
+                angle: 45,
+                colors: [
+                  ['rgba(0,0,0,0.006)', 0], ['rgba(0,0,0,0)', 0.1],
+                  ['rgba(0,0,0,0.006)', 0.2], ['rgba(0,0,0,0)', 0.3],
+                  ['rgba(0,0,0,0.006)', 0.4], ['rgba(0,0,0,0)', 0.5],
+                  ['rgba(0,0,0,0.006)', 0.6], ['rgba(0,0,0,0)', 0.7],
+                  ['rgba(0,0,0,0.006)', 0.8], ['rgba(0,0,0,0)', 0.9],
+                  ['rgba(0,0,0,0.006)', 1],
+                ]
+              })
+
+            // 高光边
+            Stack()
+              .width('100%')
+              .height('100%')
+              .borderRadius(4)
+              .border({
+                width: { top: 0.5, left: 0.5, right: 0, bottom: 0 },
+                color: 'rgba(255,255,255,0.35)',
+                style: BorderStyle.Solid
+              })
+
+            // 贴纸缩略图（最多6个）
+            if (this.previewStickers.length > 0) {
+              ForEach(this.previewStickers, (item: PreviewStickerItem, index: number) => {
+                Stack({ alignContent: Alignment.Center }) {
+                  Image(item.uri)
+                    .width(PREVIEW_STICKER_SIZE)
+                    .height(PREVIEW_STICKER_SIZE)
+                    .objectFit(ImageFit.Cover)
+                    .borderRadius(8)
+                }
+                .padding(PREVIEW_STICKER_BORDER)
+                .backgroundColor(Color.White)
+                .borderRadius(14)
+                .shadow({
+                  radius: 8,
+                  color: 'rgba(0,0,0,0.08)',
+                  offsetX: 0,
+                  offsetY: 3
+                })
+                .position({
+                  x: item.pos.x,
+                  y: item.pos.y
+                })
+                .rotate({ angle: item.pos.rotation })
+              }, (item: PreviewStickerItem, index: number) => index.toString())
+            } else {
+              Column({ space: 6 }) {
+                SymbolGlyph($r('sys.symbol.hand_draw'))
+                  .fontSize(24)
+                  .fontColor([TEXT_TERTIARY])
+
+                Text('Start your first memo')
+                  .fontSize(13)
+                  .fontColor(TEXT_TERTIARY)
+              }
+            }
+          }
+          .width('100%')
+          .height('100%')
+        }
+        .width('100%')
+        .height(MEMO_PREVIEW_HEIGHT)
+        .onClick(() => this.onCanvasTap())
+      }
+      .width('100%')
+
+      Text('Tap to edit')
+        .fontSize(12)
+        .fontColor(TEXT_TERTIARY)
+        .width('100%')
+        .textAlign(TextAlign.Center)
+    }
+    .width('100%')
   }
 
   // ========== 相机/相册选择 Sheet ==========
@@ -449,39 +515,31 @@ export struct HomePage {
 
   // ========== Build ==========
   build() {
-    Stack({ alignContent: Alignment.Bottom }) {
-      Column({ space: 0 }) {
-        this.TopBar()
+    Column({ space: 0 }) {
+      Scroll() {
+        Column({ space: 20 }) {
+          this.HeaderWithCapture()
 
-        Scroll() {
-          Column({ space: 20 }) {
-            this.CollectionStack()
+          this.CollectionStack()
 
-            Divider()
-              .strokeWidth(0.5)
-              .color($r('app.color.divider'))
-              .margin({ top: 8, bottom: 8 })
+          Divider()
+            .strokeWidth(0.5)
+            .color($r('app.color.divider'))
 
-            this.MiniCanvasPreview()
+          this.LatestMemoPreview()
 
-            // 底部留白给 Capture Button
-            Blank().height(100)
-          }
-          .width('100%')
-          .padding(16)
+          // 底部留白
+          Blank().height(32)
         }
-        .layoutWeight(1)
-        .scrollable(ScrollDirection.Vertical)
+        .width('100%')
+        .padding(16)
       }
-      .width('100%')
-      .height('100%')
-      .backgroundColor(BG_BASE)
-
-      // 底部 Capture Button
-      this.CaptureButton()
+      .layoutWeight(1)
+      .scrollable(ScrollDirection.Vertical)
     }
     .width('100%')
     .height('100%')
+    .backgroundColor(BG_BASE)
     .bindSheet(this.showPickerSheet, this.PickerSheetBuilder(), {
       height: 240,
       showClose: false,
