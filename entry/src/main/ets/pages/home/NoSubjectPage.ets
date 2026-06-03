@@ -3,7 +3,7 @@
 
 @Component
 export struct NoSubjectPage {
-  @Consume('homePathStack') pathStack: NavPathStack;
+  @Consume('rootPathStack') pathStack: NavPathStack;
 
   build() {
     Column({ space: 24 }) {

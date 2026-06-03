@@ -6,7 +6,7 @@ import { common } from '@kit.AbilityKit';
 
 @Component
 export struct ProcessingPage {
-  @Consume('homePathStack') pathStack: NavPathStack;
+  @Consume('rootPathStack') pathStack: NavPathStack;
   @State uri: string = '';
   @State stepText: string = '正在制作贴纸...';
   @State isCancelled: boolean = false;
@@ -46,7 +46,7 @@ export struct ProcessingPage {
       setTimeout(() => {
         if (!this.isCancelled) {
           const param: UriParam = { uri: processedUri };
-          this.pathStack.replacePathByName('StickerEditPage', param);
+          this.pathStack.replacePathByName('StickerPreviewPage', param);
         }
       }, 400);
     } catch (err) {

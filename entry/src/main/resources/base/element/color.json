@@ -2,19 +2,23 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#FFFFFF"
+      "value": "#FAF8F4"
     },
     {
       "name": "brand_primary",
-      "value": "#6B5CE7"
+      "value": "#F3D6D8"
     },
     {
       "name": "brand_primary_light",
-      "value": "#F0EDFF"
+      "value": "#FAF0F1"
     },
     {
       "name": "bg_base",
-      "value": "#F8F8F6"
+      "value": "#FAF8F4"
+    },
+    {
+      "name": "paper",
+      "value": "#F5EFE8"
     },
     {
       "name": "card_bg",
@@ -22,27 +26,27 @@
     },
     {
       "name": "ink_deep",
-      "value": "#1A1A1A"
+      "value": "#2F2A28"
     },
     {
       "name": "ink_mid",
-      "value": "#666666"
+      "value": "#8C847E"
     },
     {
       "name": "ink_light",
-      "value": "#999999"
+      "value": "#B8AFA8"
     },
     {
       "name": "divider",
-      "value": "#E5E5E5"
+      "value": "#E8E2DA"
     },
     {
       "name": "search_bg",
-      "value": "#F2F2F2"
+      "value": "#F2F0EC"
     },
     {
       "name": "chip_bg",
-      "value": "#F2F2F2"
+      "value": "#F2F0EC"
     },
     {
       "name": "danger",
@@ -50,11 +54,39 @@
     },
     {
       "name": "shadow_card",
-      "value": "#00000020"
+      "value": "#00000014"
     },
     {
       "name": "shadow_float",
-      "value": "#00000030"
+      "value": "#0000001A"
+    },
+    {
+      "name": "dust_pink",
+      "value": "#F3D6D8"
+    },
+    {
+      "name": "cream",
+      "value": "#F4E7D5"
+    },
+    {
+      "name": "lavender",
+      "value": "#E4E0F3"
+    },
+    {
+      "name": "sage",
+      "value": "#DDE7D8"
+    },
+    {
+      "name": "bounding",
+      "value": "#B8AFA8"
+    },
+    {
+      "name": "text_primary",
+      "value": "#2F2A28"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#8C847E"
     }
   ]
 }

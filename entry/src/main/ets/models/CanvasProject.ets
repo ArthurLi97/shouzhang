@@ -4,7 +4,7 @@ import { CanvasItem } from './CanvasItem';
 import { BackgroundConfig } from './BackgroundConfig';
 
 export interface CanvasProject {
-  id: number;
+  id?: number;
   title: string;
   thumbnailUri: string;
   items: CanvasItem[];

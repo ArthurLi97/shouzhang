@@ -1,10 +1,8 @@
 // models/Sticker.ets
+// 贴纸原始资源
 
 export interface Sticker {
-  id: number;
-  uri: string;
-  category: string;
-  createdAt: number;
-  updatedAt: number;
-  tags?: string[];
+  id?: number;
+  image: string;      // 图片文件 URI
+  collectionId: number;
 }

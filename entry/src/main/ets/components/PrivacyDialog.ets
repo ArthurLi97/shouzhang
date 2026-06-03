@@ -12,7 +12,7 @@ export struct PrivacyDialog {
 
   build() {
     Column({ space: 16 }) {
-      Text('欢迎使用 SnapSticker')
+      Text('欢迎使用 MEMO')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.ink_deep'))

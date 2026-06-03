@@ -18,7 +18,7 @@ export struct UserAgreementPage {
 
       Scroll() {
         Column({ space: 16 }) {
-          Text('SnapSticker 用户协议')
+          Text('MEMO 用户协议')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.ink_deep'))
@@ -31,13 +31,13 @@ export struct UserAgreementPage {
 
           this.SectionTitle('1. 协议接受')
           this.SectionBody(
-            '欢迎使用 SnapSticker！当您下载、安装或使用本应用时，即表示您已阅读并同意本用户协议的全部条款。' +
+            '欢迎使用 MEMO！当您下载、安装或使用本应用时，即表示您已阅读并同意本用户协议的全部条款。' +
             '如您不同意本协议，请勿使用本应用。'
           )
 
           this.SectionTitle('2. 服务说明')
           this.SectionBody(
-            'SnapSticker 是一款生活贴纸收集与创作工具，提供以下核心功能：\n' +
+            'MEMO 是一款生活手账与贴纸创作工具，提供以下核心功能：\n' +
             '• 拍照/相册导入生成贴纸\n' +
             '• 贴纸库管理与分类浏览\n' +
             '• 画布创作与自由组合\n' +

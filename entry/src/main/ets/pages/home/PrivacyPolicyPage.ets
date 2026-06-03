@@ -18,7 +18,7 @@ export struct PrivacyPolicyPage {
 
       Scroll() {
         Column({ space: 16 }) {
-          Text('SnapSticker 隐私政策')
+          Text('MEMO 隐私政策')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.ink_deep'))
@@ -31,7 +31,7 @@ export struct PrivacyPolicyPage {
 
           this.SectionTitle('1. 我们收集的信息')
           this.SectionBody(
-            '当您使用 SnapSticker 时，我们可能会收集以下信息：\n' +
+            '当您使用 MEMO 时，我们可能会收集以下信息：\n' +
             '• 图片数据：您拍摄或从相册选择的照片，用于生成贴纸。\n' +
             '• 创作内容：您在画布中组合的贴纸、文字和背景配置。\n' +
             '• 设备信息：用于优化应用性能和兼容性。'

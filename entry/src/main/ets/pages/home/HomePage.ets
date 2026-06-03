@@ -133,7 +133,7 @@ export struct HomePage {
     Column() {
       // 顶部操作栏
       Row() {
-        Text('SnapSticker')
+        Text('MEMO')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.ink_deep'))

@@ -6,7 +6,7 @@ SnapSticker 是一款 HarmonyOS 原生应用，通过拍照将现实世界中的
 
 ## 产品截图
 
-![原型图](原型图.png)
+![原型图](prototype.png)
 
 ## 核心功能
 
@@ -21,34 +21,49 @@ SnapSticker 是一款 HarmonyOS 原生应用，通过拍照将现实世界中的
 
 ## 技术栈
 
-- **平台**: HarmonyOS 6.1.0+ (API 23)
+- **平台**: HarmonyOS 6.1.0+ (API 23)，兼容 API 24
 - **语言**: ArkTS (Strict Mode)
 - **UI 框架**: ArkUI + HDS (HarmonyOS Design System)
 - **设计体系**: 沉浸光感 (Immersive Light Effects)
-- **数据存储**: RDB (relationalStore) + Preferences
+- **AI 能力**: `@kit.VisionKit` — 主体分割、图像分类
+- **相机**: `@kit.CameraKit` — 拍照选取
+- **相册**: `@kit.MediaLibraryKit` — 相册读写
+- **数据存储**: RDB (`relationalStore`) + Preferences
 
 ## 项目结构
 
 ```
 entry/src/main/ets/
-├── pages/               # 页面
-│   ├── Index.ets        # 根页面 (HdsTabs 容器)
-│   ├── home/            # 贴纸库模块
-│   ├── canvas/          # 画布创作模块
-│   └── profile/         # 我的模块
-├── components/          # 可复用组件
-│   ├── hds/             # HDS 风格封装组件
-│   └── canvas/          # 画布相关组件
-├── models/              # 数据模型
-├── database/            # 数据库 & 偏好设置
-├── utils/               # 工具类
-└── constants/           # 主题常量
+├── entryability/           # 入口 Ability
+├── entrybackupability/     # 备份恢复 Ability
+├── pages/                  # 页面
+│   ├── Index.ets           # 根页面 (HdsTabs 容器)
+│   ├── home/               # 贴纸库模块
+│   └── canvas/             # 画布创作模块
+├── components/             # 可复用组件
+│   ├── hds/                # HDS 风格封装组件
+│   ├── canvas/             # 画布相关组件
+│   ├── CategoryScrollBar.ets
+│   ├── ConfettiCanvas.ets
+│   ├── EmptyStateView.ets
+│   ├── NewStickerCard.ets
+│   ├── PrivacyDialog.ets
+│   ├── StickerDataSource.ets
+│   └── StickerGrid.ets
+├── models/                 # 数据模型
+├── database/               # 数据库 & 偏好设置
+├── utils/                  # 工具类
+│   ├── CanvasExporter.ets
+│   ├── ImageProcessor.ets
+│   └── PermissionManager.ets
+└── constants/              # 主题常量
 ```
 
 ## 页面清单
 
 | 页面 | 路径 |
 |------|------|
+| 根页面（Tab 容器） | `pages/Index.ets` |
 | 首页（贴纸库） | `pages/home/HomePage.ets` |
 | 智能抠图中 | `pages/home/ProcessingPage.ets` |
 | 贴纸编辑 | `pages/home/StickerEditPage.ets` |
@@ -57,10 +72,16 @@ entry/src/main/ets/
 | 分类贴纸库 | `pages/home/CategoryPage.ets` |
 | 分类管理 | `pages/home/CategoryManagePage.ets` |
 | 搜索贴纸 | `pages/home/SearchPage.ets` |
+| 未检测到主体 | `pages/home/NoSubjectPage.ets` |
+| 主体模糊 | `pages/home/BlurSubjectPage.ets` |
+| 多主体选择 | `pages/home/MultiSubjectSelectPage.ets` |
+| 画布背景 | `pages/home/BackgroundPage.ets` |
+| 隐私政策 | `pages/home/PrivacyPolicyPage.ets` |
+| 用户协议 | `pages/home/UserAgreementPage.ets` |
+| 设置 | `pages/home/SettingsPage.ets` |
 | 画布创作 | `pages/canvas/CanvasEditPage.ets` |
 | 画布背景 | `pages/canvas/BackgroundPage.ets` |
 | 导出分享 | `pages/canvas/ExportPage.ets` |
-| 我的 | `pages/profile/ProfilePage.ets` |
 
 ## 启动方式
 

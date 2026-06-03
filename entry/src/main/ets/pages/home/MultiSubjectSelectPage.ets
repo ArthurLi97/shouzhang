@@ -11,7 +11,7 @@ interface SubjectOption {
 
 @Component
 export struct MultiSubjectSelectPage {
-  @Consume('homePathStack') pathStack: NavPathStack;
+  @Consume('rootPathStack') pathStack: NavPathStack;
   @State selectedIds: number[] = [];
   @State subjects: SubjectOption[] = [
     { id: 1, uri: '', label: '主体 1' },

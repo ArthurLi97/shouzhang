@@ -1,111 +1,83 @@
 // components/canvas/CanvasElement.ets
-// 画布元素：贴纸/文字，支持选中状态、拖拽反馈、删除提示
+// MEMO Canvas 贴纸 — 物理感照片贴纸
+// 白边 12px + 24px 圆角 + 阴影，选中虚线框 + 旋转把手 + 删除按钮
 
-import { CanvasItem } from '../../models/CanvasItem';
+import { BOUNDING, DANGER } from '../../constants/ThemeConstants';
+
+const BORDER_WIDTH = 12;
+const IMAGE_SIZE = 100;
+const OUTER_SIZE = IMAGE_SIZE + BORDER_WIDTH * 2; // 124
+const IMAGE_RADIUS = 24;
+const OUTER_RADIUS = IMAGE_RADIUS + BORDER_WIDTH;   // 36
 
 @Component
 export struct CanvasElement {
-  @ObjectLink item: CanvasItem;
-  @Prop isSelected: boolean;
-  @Prop isDragging: boolean = false;
-  @Prop isOverDelete: boolean = false;
+  @Prop uri: string = '';
+  @Prop isSelected: boolean = false;
+  onDelete?: (id: string) => void;
+  @Prop itemId: string = '';
 
   build() {
-    Stack() {
-      // 内容层
-      Stack() {
-        if (this.item.type === 'sticker' && this.item.uri) {
-          Image(this.item.uri)
-            .width('100%')
-            .height('100%')
-            .objectFit(ImageFit.Contain)
-        } else if (this.item.type === 'text' && this.item.content) {
-          Text(this.item.content)
-            .fontSize(this.item.fontSize)
-            .fontColor(this.item.fontColor)
-            .width('100%')
-            .height('100%')
-            .textAlign(TextAlign.Center)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .maxLines(3)
-            .hitTestBehavior(HitTestMode.Transparent)
-        }
+    Stack({ alignContent: Alignment.Center }) {
+      // 白边贴纸层
+      Stack({ alignContent: Alignment.Center }) {
+        Image(this.uri)
+          .width(IMAGE_SIZE)
+          .height(IMAGE_SIZE)
+          .objectFit(ImageFit.Contain)
+          .borderRadius(IMAGE_RADIUS)
       }
-      .width('100%')
-      .height('100%')
-      .backgroundColor(this.item.type === 'text' ? 'rgba(255,255,255,0.01)' : Color.White)
-      .borderRadius(8)
-      .shadow(this.item.shadowEnabled ? {
-        radius: 8,
-        color: this.item.shadowColor,
-        offsetX: 2,
-        offsetY: 4
-      } : undefined)
-      .border(this.item.borderWidth > 0 ? {
-        width: this.item.borderWidth,
-        color: this.item.borderColor,
-        style: BorderStyle.Solid
-      } : undefined)
-      // 拖拽时半透明
-      .opacity(this.isDragging ? 0.75 : 1)
-      // 选中时轻微放大
-      .scale({
-        x: this.isSelected ? 1.03 : 1,
-        y: this.isSelected ? 1.03 : 1,
-        centerX: '50%',
-        centerY: '50%'
+      .padding(BORDER_WIDTH)
+      .backgroundColor(Color.White)
+      .borderRadius(OUTER_RADIUS)
+      .shadow({
+        radius: 20,
+        color: 'rgba(0,0,0,0.08)',
+        offsetX: 0,
+        offsetY: 6
       })
-      .animation({ duration: 150, curve: Curve.EaseInOut })
 
-      // 选中状态外框
+      // 选中态层
       if (this.isSelected) {
+        // 1.5px 虚线框（包裹白边外沿）
         Stack()
-          .width('100%')
-          .height('100%')
+          .width(OUTER_SIZE)
+          .height(OUTER_SIZE)
           .border({
-            width: 2,
-            color: this.isOverDelete ? '#FF3B30' : $r('app.color.brand_primary'),
+            width: 1.5,
+            color: BOUNDING,
             style: BorderStyle.Dashed
           })
-          .borderRadius(8)
-          .margin(2)
+          .borderRadius(OUTER_RADIUS)
 
-        // 四角控制点
-        this.ControlDot(Alignment.TopStart)
-        this.ControlDot(Alignment.TopEnd)
-        this.ControlDot(Alignment.BottomStart)
-
-        // 右下角缩放/旋转手柄
-        Stack() {
-          SymbolGlyph($r('sys.symbol.arrow_up_left_and_arrow_down_right'))
+        // 旋转把手 — 底部中心，24pt
+        Stack({ alignContent: Alignment.Center }) {
+          SymbolGlyph($r('sys.symbol.arrow_clockwise'))
             .fontSize(12)
             .fontColor([Color.White])
         }
-        .width(20)
-        .height(20)
-        .backgroundColor(this.isOverDelete ? '#FF3B30' : $r('app.color.brand_primary'))
-        .borderRadius(10)
-        .position({ x: -10, y: -10 })
-        .align(Alignment.BottomEnd)
+        .width(24)
+        .height(24)
+        .backgroundColor(BOUNDING)
+        .borderRadius(12)
+        .offset({ x: 0, y: OUTER_SIZE / 2 - 12 })  // 底部中心外侧
+
+        // 删除按钮 — 右上角，28pt 红色圆
+        Stack({ alignContent: Alignment.Center }) {
+          SymbolGlyph($r('sys.symbol.xmark'))
+            .fontSize(11)
+            .fontColor([Color.White])
+        }
+        .width(28)
+        .height(28)
+        .backgroundColor(DANGER)
+        .borderRadius(14)
+        .offset({ x: OUTER_SIZE / 2 - 14, y: -(OUTER_SIZE / 2 - 14) })
+        .shadow({ radius: 4, color: 'rgba(255,59,48,0.25)', offsetY: 2 })
+        .onClick(() => { this.onDelete?.(this.itemId); })
       }
     }
-    .width(this.item.width)
-    .height(this.item.height)
-  }
-
-  @Builder
-  ControlDot(align: Alignment): void {
-    Stack()
-      .width(8)
-      .height(8)
-      .backgroundColor(this.isOverDelete ? '#FF3B30' : $r('app.color.brand_primary'))
-      .borderRadius(4)
-      .position({
-        x: align === Alignment.TopStart || align === Alignment.BottomStart ? -4 : undefined,
-        y: align === Alignment.TopStart || align === Alignment.TopEnd ? -4 : undefined,
-        right: align === Alignment.TopEnd ? -4 : undefined,
-        bottom: align === Alignment.BottomStart ? -4 : undefined,
-      })
-      .align(align)
+    .width(OUTER_SIZE)
+    .height(OUTER_SIZE)
   }
 }
