@@ -16,3 +16,9 @@ export interface ExportParam {
   items: string;
   background: string;
 }
+
+export interface CollectionDetailParam {
+  collectionId: number;
+  collectionName: string;
+  collectionColor: string;
+}

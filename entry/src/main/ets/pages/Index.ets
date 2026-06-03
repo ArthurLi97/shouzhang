@@ -1,7 +1,9 @@
 // pages/Index.ets
-// MEMO 根页面：Navigation 容器，默认显示 Canvas 编辑器
+// MEMO 根页面：Navigation 容器，默认显示 HomePage
 
+import { HomePage } from './home/HomePage';
 import { CanvasEditPage } from './canvas/CanvasEditPage';
+import { CollectionDetailPage } from './home/CollectionDetailPage';
 import { ProcessingPage } from './home/ProcessingPage';
 import { StickerPreviewPage } from './home/StickerPreviewPage';
 import { NoSubjectPage } from './home/NoSubjectPage';
@@ -57,7 +59,11 @@ struct RootPage {
   @Builder
   navDestinationBuilder(name: string, param: object) {
     NavDestination() {
-      if (name === 'ProcessingPage') {
+      if (name === 'CanvasEditPage') {
+        CanvasEditPage()
+      } else if (name === 'CollectionDetailPage') {
+        CollectionDetailPage()
+      } else if (name === 'ProcessingPage') {
         ProcessingPage()
       } else if (name === 'StickerPreviewPage') {
         StickerPreviewPage()
@@ -77,7 +83,7 @@ struct RootPage {
     Stack() {
       if (this.privacyChecked) {
         Navigation(this.pathStack) {
-          CanvasEditPage()
+          HomePage()
         }
         .hideTitleBar(true)
         .navDestination(this.navDestinationBuilder)

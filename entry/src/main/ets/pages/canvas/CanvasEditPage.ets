@@ -33,6 +33,7 @@ export struct CanvasEditPage {
   @State drawerExpanded: boolean = false;
   @State showPickerSheet: boolean = false;
   @State isExporting: boolean = false;
+  @State isPageVisible: boolean = false;
 
   private undoStack: CanvasSticker[][] = [];
   private redoStack: CanvasSticker[][] = [];
@@ -49,7 +50,20 @@ export struct CanvasEditPage {
   }
 
   onPageShow(): void {
+    this.isPageVisible = true;
     this.checkPendingCanvasSticker();
+  }
+
+  onPageHide(): void {
+    this.isPageVisible = false;
+  }
+
+  aboutToDisappear(): void {
+    // 保存 canvas 状态到 AppStorage，供 HomePage 预览
+    AppStorage.setOrCreate('home_canvas_stickers', this.canvasStickers);
+    const entries: [number, string][] = [];
+    this.stickerImageMap.forEach((value, key) => { entries.push([key, value]); });
+    AppStorage.setOrCreate('home_canvas_image_map', JSON.stringify(entries));
   }
 
   private checkPendingCanvasSticker(): void {
@@ -64,6 +78,7 @@ export struct CanvasEditPage {
   }
 
   onPendingPhotoChanged(): void {
+    if (!this.isPageVisible) return;
     if (this.pendingPhotoUri) {
       const uri = this.pendingPhotoUri;
       this.pendingPhotoUri = '';
@@ -209,28 +224,33 @@ export struct CanvasEditPage {
   @Builder
   TopBar(): void {
     Row() {
-      Text('MEMO')
+      SymbolGlyph($r('sys.symbol.chevron_left'))
         .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(TEXT_PRIMARY)
+        .fontColor([TEXT_PRIMARY])
+        .onClick(() => { this.pathStack.pop(); })
 
-      Blank().layoutWeight(1)
+      Text('Edit Memo')
+        .fontSize(18)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(TEXT_PRIMARY)
+        .layoutWeight(1)
+        .textAlign(TextAlign.Center)
 
       Row({ space: 20 }) {
         SymbolGlyph($r('sys.symbol.arrow_counterclockwise'))
-          .fontSize(22)
+          .fontSize(20)
           .fontColor([this.undoStack.length > 0 ? TEXT_PRIMARY : $r('app.color.ink_light')])
           .onClick(() => this.undo())
 
         SymbolGlyph($r('sys.symbol.arrow_clockwise'))
-          .fontSize(22)
+          .fontSize(20)
           .fontColor([this.redoStack.length > 0 ? TEXT_PRIMARY : $r('app.color.ink_light')])
           .onClick(() => this.redo())
       }
     }
     .width('100%')
     .height(56)
-    .padding({ left: 20, right: 20 })
+    .padding({ left: 16, right: 16 })
   }
 
   @Builder

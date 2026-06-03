@@ -122,6 +122,31 @@ export class RdbHelper {
     await this.rdbStore.delete(predicates);
   }
 
+  async getStickerCountByCollection(collectionId: number): Promise<number> {
+    if (!this.rdbStore) return 0;
+    const resultSet = await this.rdbStore.querySql(
+      'SELECT COUNT(*) as cnt FROM stickers WHERE collectionId = ?',
+      [collectionId]
+    );
+    let count = 0;
+    if (resultSet.goToNextRow()) {
+      count = resultSet.getLong(resultSet.getColumnIndex('cnt'));
+    }
+    resultSet.close();
+    return count;
+  }
+
+  async getTotalStickerCount(): Promise<number> {
+    if (!this.rdbStore) return 0;
+    const resultSet = await this.rdbStore.querySql('SELECT COUNT(*) as cnt FROM stickers');
+    let count = 0;
+    if (resultSet.goToNextRow()) {
+      count = resultSet.getLong(resultSet.getColumnIndex('cnt'));
+    }
+    resultSet.close();
+    return count;
+  }
+
   // Journals
   async insertJournal(journal: Journal): Promise<number> {
     if (!this.rdbStore) return -1;
