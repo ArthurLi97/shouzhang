@@ -9,6 +9,8 @@ import { StickerPreviewPage } from './home/StickerPreviewPage';
 import { NoSubjectPage } from './home/NoSubjectPage';
 import { BlurSubjectPage } from './home/BlurSubjectPage';
 import { MultiSubjectSelectPage } from './home/MultiSubjectSelectPage';
+import { JournalPage } from './journal/JournalPage';
+import { JournalDetailPage } from './journal/JournalDetailPage';
 import { RdbHelper } from '../database/RdbHelper';
 import { PreferencesHelper } from '../database/PreferencesHelper';
 import { common } from '@kit.AbilityKit';
@@ -73,6 +75,10 @@ struct RootPage {
         BlurSubjectPage()
       } else if (name === 'MultiSubjectSelectPage') {
         MultiSubjectSelectPage()
+      } else if (name === 'JournalPage') {
+        JournalPage()
+      } else if (name === 'JournalDetailPage') {
+        JournalDetailPage()
       }
     }
     .hideTitleBar(true)

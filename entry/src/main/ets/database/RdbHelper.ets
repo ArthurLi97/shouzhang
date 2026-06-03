@@ -5,6 +5,7 @@ import { common } from '@kit.AbilityKit';
 import { Sticker } from '../models/Sticker';
 import { Collection } from '../models/Collection';
 import { Journal } from '../models/Journal';
+import { CanvasProject } from '../models/CanvasProject';
 
 export class RdbHelper {
   private static instance: RdbHelper;
@@ -50,6 +51,18 @@ export class RdbHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         canvasSnapshot TEXT NOT NULL
+      )
+    `);
+
+    await this.rdbStore.executeSql(`
+      CREATE TABLE IF NOT EXISTS canvas_projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        thumbnailUri TEXT NOT NULL,
+        items TEXT NOT NULL,
+        background TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
       )
     `);
   }
@@ -170,5 +183,57 @@ export class RdbHelper {
     }
     resultSet.close();
     return list;
+  }
+
+  // Canvas Projects
+  async insertCanvasProject(project: CanvasProject): Promise<number> {
+    if (!this.rdbStore) return -1;
+    const bucket: relationalStore.ValuesBucket = {
+      title: project.title,
+      thumbnailUri: project.thumbnailUri,
+      items: JSON.stringify(project.items),
+      background: JSON.stringify(project.background),
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    };
+    return await this.rdbStore.insert('canvas_projects', bucket);
+  }
+
+  async getCanvasProjects(): Promise<CanvasProject[]> {
+    if (!this.rdbStore) return [];
+    const resultSet = await this.rdbStore.querySql(
+      'SELECT * FROM canvas_projects ORDER BY updatedAt DESC'
+    );
+    const list: CanvasProject[] = [];
+    while (resultSet.goToNextRow()) {
+      list.push(this.parseCanvasProject(resultSet));
+    }
+    resultSet.close();
+    return list;
+  }
+
+  async getLatestCanvasProject(): Promise<CanvasProject | null> {
+    if (!this.rdbStore) return null;
+    const resultSet = await this.rdbStore.querySql(
+      'SELECT * FROM canvas_projects ORDER BY updatedAt DESC LIMIT 1'
+    );
+    let project: CanvasProject | null = null;
+    if (resultSet.goToNextRow()) {
+      project = this.parseCanvasProject(resultSet);
+    }
+    resultSet.close();
+    return project;
+  }
+
+  private parseCanvasProject(resultSet: relationalStore.ResultSet): CanvasProject {
+    return {
+      id: resultSet.getLong(resultSet.getColumnIndex('id')),
+      title: resultSet.getString(resultSet.getColumnIndex('title')),
+      thumbnailUri: resultSet.getString(resultSet.getColumnIndex('thumbnailUri')),
+      items: JSON.parse(resultSet.getString(resultSet.getColumnIndex('items'))),
+      background: JSON.parse(resultSet.getString(resultSet.getColumnIndex('background'))),
+      createdAt: resultSet.getLong(resultSet.getColumnIndex('createdAt')),
+      updatedAt: resultSet.getLong(resultSet.getColumnIndex('updatedAt')),
+    };
   }
 }

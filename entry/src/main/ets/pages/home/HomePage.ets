@@ -1,9 +1,10 @@
 // pages/home/HomePage.ets
 // MEMO 首页 — Capture → Collect → Compose
-// 整体感设计：Header+Capture + My Collections + Latest Memo Preview
+// 顶部固定 Header + 滚动内容区 + LatestMemo 三种状态
 
 import { Collection } from '../../models/Collection';
 import { CanvasSticker } from '../../models/CanvasSticker';
+import { CanvasProject } from '../../models/CanvasProject';
 import { CollectionDetailParam } from '../../models/PageParams';
 import { CollectionFolderSheet } from '../../components/canvas/CollectionFolderSheet';
 import { RdbHelper } from '../../database/RdbHelper';
@@ -36,7 +37,6 @@ interface PreviewStickerItem {
   pos: PreviewStickerPos;
 }
 
-// 6 个固定位置 + 轻微旋转，模拟手账贴纸的随意感
 const PREVIEW_POSITIONS: PreviewStickerPos[] = [
   { x: '12%', y: '12%', rotation: -8 },
   { x: '52%', y: '8%', rotation: 5 },
@@ -53,18 +53,22 @@ export struct HomePage {
   @State collectionCounts: Map<number, number> = new Map();
   @State totalStickers: number = 0;
   @State previewStickers: PreviewStickerItem[] = [];
+  @State hasDraft: boolean = false;
+  @State latestProject: CanvasProject | null = null;
   @State showPickerSheet: boolean = false;
 
   private db: RdbHelper = RdbHelper.getInstance();
 
   aboutToAppear(): void {
     this.loadData();
-    this.loadPreviewStickers();
+    this.loadDraftState();
+    this.loadLatestProject();
   }
 
   onPageShow(): void {
     this.loadData();
-    this.loadPreviewStickers();
+    this.loadDraftState();
+    this.loadLatestProject();
   }
 
   async loadData(): Promise<void> {
@@ -81,6 +85,16 @@ export struct HomePage {
       this.totalStickers = total;
     } catch (err) {
       console.error('HomePage loadData error:', JSON.stringify(err));
+    }
+  }
+
+  loadDraftState(): void {
+    const canvasStickers = AppStorage.get<CanvasSticker[]>('home_canvas_stickers');
+    this.hasDraft = canvasStickers !== undefined && canvasStickers.length > 0;
+    if (this.hasDraft) {
+      this.loadPreviewStickers();
+    } else {
+      this.previewStickers = [];
     }
   }
 
@@ -114,6 +128,15 @@ export struct HomePage {
     this.previewStickers = preview;
   }
 
+  async loadLatestProject(): Promise<void> {
+    try {
+      this.latestProject = await this.db.getLatestCanvasProject();
+    } catch (err) {
+      console.error('loadLatestProject error:', JSON.stringify(err));
+      this.latestProject = null;
+    }
+  }
+
   getCurrentDate(): string {
     const now = new Date();
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -135,7 +158,22 @@ export struct HomePage {
     this.pathStack.pushPathByName('CanvasEditPage', param);
   }
 
-  // ========== Header + Capture ==========
+  onJournalTap(): void {
+    const pid = this.latestProject?.id;
+    if (pid === undefined || pid === null) return;
+    interface JournalNavParam {
+      id: number;
+    }
+    const param: JournalNavParam = { id: pid };
+    this.pathStack.pushPathByName('JournalDetailPage', param);
+  }
+
+  onSeeAllJournals(): void {
+    const param: Record<string, string> = {};
+    this.pathStack.pushPathByName('JournalPage', param);
+  }
+
+  // ========== Header + Capture (固定顶部) ==========
   @Builder
   HeaderWithCapture(): void {
     Column({ space: 12 }) {
@@ -217,7 +255,7 @@ export struct HomePage {
       .onClick(() => { this.showPickerSheet = true; })
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+    .padding({ left: 16, right: 16, top: 28, bottom: 8 })
     .alignItems(HorizontalAlign.Start)
   }
 
@@ -251,13 +289,6 @@ export struct HomePage {
       }
       .width('100%')
       .height(this.getStackHeight())
-
-      if (this.totalStickers === 0) {
-        Text('No stickers yet — tap Capture to start')
-          .fontSize(14)
-          .fontColor(TEXT_TERTIARY)
-          .margin({ top: 16, bottom: 8 })
-      }
     }
     .width('100%')
     .alignItems(HorizontalAlign.Center)
@@ -268,15 +299,12 @@ export struct HomePage {
     return (this.collections.length - 1) * OVERLAP_PX + SHEET_HEIGHT;
   }
 
-  // ========== Latest Memo Preview ==========
+  // ========== Latest Memo Preview（三种状态）==========
   @Builder
   LatestMemoPreview(): void {
     Column({ space: 8 }) {
-      Text('Latest Memo')
-        .fontSize(14)
-        .fontColor(TEXT_SECONDARY)
-        .width('100%')
-        .textAlign(TextAlign.Start)
+      // 标题行
+      this.MemoTitleRow()
 
       Stack({ alignContent: Alignment.Center }) {
         // 厚纸板手账纸
@@ -315,7 +343,7 @@ export struct HomePage {
               offsetY: 2
             })
 
-          // 主色层 + 纹理
+          // 主色层 + 纹理 + 高光边
           Stack() {
             Stack()
               .width('100%')
@@ -323,7 +351,6 @@ export struct HomePage {
               .backgroundColor(PAPER)
               .borderRadius(4)
 
-            // 45° 纹理
             Stack()
               .width('100%')
               .height('100%')
@@ -340,7 +367,6 @@ export struct HomePage {
                 ]
               })
 
-            // 高光边
             Stack()
               .width('100%')
               .height('100%')
@@ -351,8 +377,8 @@ export struct HomePage {
                 style: BorderStyle.Solid
               })
 
-            // 贴纸缩略图（最多6个）
-            if (this.previewStickers.length > 0) {
+            // === 状态 A：Continue Draft ===
+            if (this.hasDraft) {
               ForEach(this.previewStickers, (item: PreviewStickerItem, index: number) => {
                 Stack({ alignContent: Alignment.Center }) {
                   Image(item.uri)
@@ -370,21 +396,46 @@ export struct HomePage {
                   offsetX: 0,
                   offsetY: 3
                 })
-                .position({
-                  x: item.pos.x,
-                  y: item.pos.y
-                })
+                .position({ x: item.pos.x, y: item.pos.y })
                 .rotate({ angle: item.pos.rotation })
               }, (item: PreviewStickerItem, index: number) => index.toString())
-            } else {
-              Column({ space: 6 }) {
-                SymbolGlyph($r('sys.symbol.hand_draw'))
-                  .fontSize(24)
-                  .fontColor([TEXT_TERTIARY])
+            }
+            // === 状态 B：Latest Memo（缩略图）===
+            else if (this.latestProject) {
+              if (this.latestProject.thumbnailUri) {
+                Image(this.latestProject.thumbnailUri)
+                  .width('85%')
+                  .height('85%')
+                  .objectFit(ImageFit.Cover)
+                  .borderRadius(8)
+              } else {
+                Column({ space: 6 }) {
+                  SymbolGlyph($r('sys.symbol.camera'))
+                    .fontSize(28)
+                    .fontColor([TEXT_TERTIARY])
+                  Text(this.latestProject.title)
+                    .fontSize(14)
+                    .fontColor(TEXT_SECONDARY)
+                }
+              }
+            }
+            // === 状态 C：引导空态 ===
+            else {
+              Column({ space: 10 }) {
+                SymbolGlyph($r('sys.symbol.star'))
+                  .fontSize(32)
+                  .fontColor([$r('app.color.dust_pink')])
 
-                Text('Start your first memo')
+                Text('Your first memo')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor(TEXT_PRIMARY)
+
+                Text('Add stickers from a collection above, or tap Capture to start')
                   .fontSize(13)
-                  .fontColor(TEXT_TERTIARY)
+                  .fontColor(TEXT_SECONDARY)
+                  .textAlign(TextAlign.Center)
+                  .padding({ left: 24, right: 24 })
               }
             }
           }
@@ -393,17 +444,57 @@ export struct HomePage {
         }
         .width('100%')
         .height(MEMO_PREVIEW_HEIGHT)
-        .onClick(() => this.onCanvasTap())
+        .onClick(() => {
+          if (this.latestProject && !this.hasDraft) {
+            this.onJournalTap();
+          } else {
+            this.onCanvasTap();
+          }
+        })
       }
       .width('100%')
 
-      Text('Tap to edit')
+      // 底部提示
+      Text(this.getMemoHint())
         .fontSize(12)
         .fontColor(TEXT_TERTIARY)
         .width('100%')
         .textAlign(TextAlign.Center)
     }
     .width('100%')
+  }
+
+  @Builder
+  MemoTitleRow(): void {
+    Row() {
+      if (this.hasDraft) {
+        Text('Continue')
+          .fontSize(14)
+          .fontColor(TEXT_SECONDARY)
+      } else {
+        Text('Latest Memo')
+          .fontSize(14)
+          .fontColor(TEXT_SECONDARY)
+      }
+
+      Blank().layoutWeight(1)
+
+      // "See all" 只在有作品且无草稿时显示
+      if (!this.hasDraft && this.latestProject) {
+        Text('See all')
+          .fontSize(13)
+          .fontColor($r('app.color.dust_pink'))
+          .onClick(() => this.onSeeAllJournals())
+      }
+    }
+    .width('100%')
+    .height(20)
+  }
+
+  private getMemoHint(): string {
+    if (this.hasDraft) return 'Tap to continue editing';
+    if (this.latestProject) return 'Tap to view';
+    return 'Tap to start';
   }
 
   // ========== 相机/相册选择 Sheet ==========
@@ -516,10 +607,12 @@ export struct HomePage {
   // ========== Build ==========
   build() {
     Column({ space: 0 }) {
+      // 固定顶部：Header + Capture（始终可见）
+      this.HeaderWithCapture()
+
+      // 可滚动内容区
       Scroll() {
         Column({ space: 20 }) {
-          this.HeaderWithCapture()
-
           this.CollectionStack()
 
           Divider()
